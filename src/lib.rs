@@ -53,7 +53,7 @@ impl ShutUp {
     }
 
     /// Wait until a shutdown signal is received.
-    pub fn wait<'a>(&self) -> impl Wait {
+    pub fn wait(&self) -> impl Wait {
         let mut signal = self.0.signal.subscribe();
         async move {
             let _ = signal.recv().await;
