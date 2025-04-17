@@ -1,2 +1,2 @@
 # shutup
-utility for handling asynchronous shutdown signals
+Utility for handling asynchronous shutdown signals

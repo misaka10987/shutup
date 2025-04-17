@@ -1,0 +1,15 @@
+[package]
+name = "shutup"
+version = "0.1.0"
+edition = "2024"
+authors = ["misaka10987 <misaka10987@outlook.com>"]
+description = "Utility for handling asynchronous shutdown signals"
+documentation = "https://github.com/misaka10987/shutup"
+homepage = "https://github.com/misaka10987/shutup"
+repository = "https://github.com/misaka10987/shutup"
+readme = "README.md"
+keywords = ["shutup", "signal", "shutdown", "tokio"]
+license = "MIT"
+
+[dependencies]
+tokio = { version = "1.44.2", features = ["sync"], default-features = false }
