@@ -17,12 +17,17 @@ impl<T> Wait for T where T: Future<Output = ()> + Send + 'static {}
 ///
 /// ## Circular Reference
 /// The bahaviour is undefined if circular reference of children occurs.
+///
+/// # One-time Usage
+/// This is designed for one-time usage for managing shutdown signals.
+/// The bahaviour is undefined if [`Self::shut`] is called for multiple times.
 #[derive(Clone)]
 pub struct ShutUp(Arc<ShutUpInner>);
 
 struct ShutUpInner {
     signal: broadcast::Sender<()>,
     children: Mutex<Vec<ShutUp>>,
+    hooks: Mutex<Vec<Box<dyn FnOnce() + Send>>>,
     status: AtomicBool,
 }
 
@@ -31,6 +36,7 @@ impl ShutUp {
         Self(Arc::new(ShutUpInner {
             signal: broadcast::channel(1).0,
             children: Mutex::new(vec![]),
+            hooks: Mutex::new(vec![]),
             status: AtomicBool::new(false),
         }))
     }
@@ -67,12 +73,24 @@ impl ShutUp {
         self.0.status.load(Ordering::Relaxed)
     }
 
+    /// Register a hook to be run when this handle is shut down.
+    pub fn register_hook(&self, hook: impl FnOnce() + Send + 'static) {
+        let hook = Box::new(hook);
+        self.0.hooks.lock().unwrap().push(hook);
+    }
+
     /// Triggers shutdown on the current handle and its children.
     pub fn shut(&self) {
+        if self.off() {
+            return;
+        }
         let _ = self.0.signal.send(());
         self.0.status.store(true, Ordering::Relaxed);
         for i in self.0.children.lock().unwrap().drain(..) {
             i.shut();
+        }
+        for i in self.0.hooks.lock().unwrap().drain(..) {
+            i();
         }
     }
 }
